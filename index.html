@@ -1,0 +1,65 @@
+    <!doctype html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>El Claro Brumoso | Escenario 3D con Three.js</title>
+        <meta name="description" content="Escenario 3D interactivo hecho con Three.js y WebGL. Proyecto final de Graficación." />
+        <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
+    </head>
+    <body>
+        <main class="escenario">
+        <div id="app" class="lienzo"></div>
+
+        <header class="encabezado">
+            <h2 class="encabezado__titulo">El Claro Brumoso</h2>
+            <p class="encabezado__sub">Exploración 3D con Three.js y WebGL</p>
+        </header>
+
+        <section class="panel panel--estado" aria-live="polite">
+            <h3>Estado del personaje</h3>
+            <dl>
+            <dt>Animación</dt><dd id="estado-animacion">Cargando</dd>
+            <dt>Movimiento</dt><dd id="estado-movimiento">Detenido</dd>
+            <dt>Orientación</dt><dd id="estado-rotacion">0°</dd>
+            </dl>
+        </section>
+
+        <aside class="panel panel--ayuda" id="panel-ayuda">
+            <button class="panel__boton" id="boton-ayuda" type="button" aria-expanded="true">Ocultar ayuda</button>
+            <div id="contenido-ayuda">
+            <h3>Objetivo</h3>
+            <p>Recorre el claro, empuja las cajas y barriles, patea la pelota y prueba cada animación sin salir del muro de piedra.</p>
+            <h3>Teclado</h3>
+            <table class="tabla-teclas">
+                <tbody id="controles-hud"></tbody>
+            </table>
+            <h3>Cámara</h3>
+            <p>Arrastra con el botón izquierdo del ratón para girar alrededor del personaje. Usa la rueda para acercar o alejar.</p>
+            </div>
+        </aside>
+
+        <div class="insignia"><a href="#pie">Graficación · Datos del proyecto ↓</a></div>
+
+        <div class="carga" id="carga">
+            <p id="carga-texto">Preparando el claro…</p>
+            <div class="carga__barra"><div class="carga__relleno" id="carga-relleno"></div></div>
+            <p class="carga__error" id="carga-error" hidden></p>
+        </div>
+        </main>
+
+        <footer class="pie" id="pie">
+        <h1 class="pie__titulo">El Claro Brumoso</h1>
+        <p class="pie__linea">Nombres de los integrantes: Juan Pablo Sánchez García | Eduardo Zenil Guerrero</p>
+        <p class="pie__linea">Números de control: 24200101 | 25200365</p>
+        <p class="pie__linea">Título de la escena 3D: El Claro Brumoso</p>
+        <table class="pie__tabla">
+            <caption>Instrucciones de teclado</caption>
+            <thead><tr><th scope="col">Tecla</th><th scope="col">Acción</th></tr></thead>
+            <tbody id="controles-pie"></tbody>
+        </table>
+        </footer>
+
+        <script type="module" src="/src/main.js"></script>
+    </body>
+    </html>
