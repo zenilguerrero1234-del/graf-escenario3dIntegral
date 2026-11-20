@@ -1,26 +1,32 @@
     export const CONTROLES = [
-    ['W', 'Avanzar'],
-    ['S', 'Retroceder'],
-    ['A', 'Desplazarse a la izquierda'],
-    ['D', 'Desplazarse a la derecha'],
+    ['↑', 'Avanzar'],
+    ['↓', 'Retroceder'],
+    ['←', 'Desplazarse a la izquierda'],
+    ['→', 'Desplazarse a la derecha'],
     ['1', 'Animación de caminar'],
     ['2', 'Animación de correr'],
     ['3', 'Animación de bailar'],
     ['Espacio', 'Saltar'],
     ['E', 'Girar 90 grados'],
     ['P', 'Iniciar o detener el movimiento'],
+    ['F', 'Agarrar o soltar un objeto'],
+    ['Q', 'Patear o lanzar'],
+    ['R', 'Pulso de luz'],
     ['M', 'Abrir el menú y pausar']
     ];
 
     export const CONTROLES_VR = [
-    ['Palanca izquierda', 'Mover al personaje'],
-    ['Palanca derecha', 'Girar la vista (pasos de 45°)'],
-    ['Botón A', 'Saltar'],
-    ['Botón B', 'Bailar o dejar de bailar'],
-    ['Botón X', 'Cambiar entre caminar y correr'],
-    ['Botón Y', 'Mostrar u ocultar este panel'],
-    ['Gatillo derecho', 'Iniciar o detener el movimiento'],
-    ['Gatillo izquierdo', 'Reiniciar la partida']
+    ['Joystick izquierdo', 'Mover al personaje'],
+    ['Joystick derecho', 'Girar la vista (pasos de 45°)'],
+    ['Presionar un joystick', 'Iniciar o detener el movimiento'],
+    ['Botón A (derecho)', 'Saltar'],
+    ['Botón B (derecho)', 'Bailar o dejar de bailar'],
+    ['Botón X (izquierdo)', 'Cambiar entre caminar y correr'],
+    ['Botón Y (izquierdo)', 'Mostrar u ocultar este panel'],
+    ['Gatillo derecho', 'Patear o lanzar'],
+    ['Gatillo izquierdo', 'Pulso de luz'],
+    ['Botón de agarre', 'Agarrar o soltar objetos'],
+    ['Botón Meta', 'Menú del visor (lo maneja Meta)']
     ];
 
     const $ = (id) => document.getElementById(id);
@@ -61,13 +67,14 @@
     llenarTabla('controles-menu', CONTROLES);
     llenarTabla('controles-vr', CONTROLES_VR);
 
-    const vistas = ['vista-principal', 'vista-controles', 'vista-creditos'];
+    const vistas = ['vista-principal', 'vista-controles', 'vista-ayuda', 'vista-creditos'];
     const mostrarVista = (id) => {
         for (const v of vistas) $(v).hidden = v !== id;
     };
     irAVistaPrincipal = () => mostrarVista('vista-principal');
 
     $('btn-controles').addEventListener('click', () => mostrarVista('vista-controles'));
+    $('btn-ayuda').addEventListener('click', () => mostrarVista('vista-ayuda'));
     $('btn-creditos').addEventListener('click', () => mostrarVista('vista-creditos'));
     document.querySelectorAll('[data-volver]').forEach((b) => b.addEventListener('click', irAVistaPrincipal));
 
@@ -75,9 +82,13 @@
     $('btn-libre').addEventListener('click', () => acciones.alLibre());
     $('btn-continuar').addEventListener('click', () => acciones.alContinuar());
     $('btn-vr').addEventListener('click', () => acciones.alVR());
+    $('btn-musica').addEventListener('click', () => {
+        const silenciada = acciones.alMusica();
+        $('btn-musica').textContent = silenciada ? 'Música: no' : 'Música: sí';
+    });
     $('btn-sonido').addEventListener('click', () => {
         const silenciado = acciones.alSonido();
-        $('btn-sonido').textContent = silenciado ? 'Sonido: no' : 'Sonido: sí';
+        $('btn-sonido').textContent = silenciado ? 'Efectos: no' : 'Efectos: sí';
     });
     $('boton-menu').addEventListener('click', () => acciones.alAbrirMenu());
     $('btn-reintentar').addEventListener('click', () => acciones.alReiniciar());
@@ -113,17 +124,69 @@
     $('nota-vr').textContent = mensaje;
     }
 
-    /* Marcador */
-    export function mostrarHUD(visible) {
-    $('hud-juego').hidden = !visible;
+    export function setRecord(valor) {
+    $('menu-record').textContent = String(valor);
     }
 
-    export function actualizarHUD({ modo, tiempo, recogidos, total, puntos, goles }) {
+    /* Marcador y radar */
+    export function mostrarHUD(visible) {
+    $('hud-juego').hidden = !visible;
+    $('radar').hidden = !visible;
+    }
+
+    export function actualizarHUD({ modo, tiempo, recogidos, total, puntos, goles, pulso }) {
     $('hud-juego').dataset.modo = modo === 'libre' ? 'libre' : 'cristales';
     poner('hud-tiempo', formatoTiempo(tiempo));
     poner('hud-cristales', `${recogidos}/${total}`);
     poner('hud-puntos', String(puntos));
     poner('hud-goles', String(goles));
+    poner('hud-pulso', pulso);
+    }
+
+    // Mapa visto desde arriba, con la misma orientación que la cámara de inicio
+    export function dibujarRadar({ jugador, cristales, placas, porteria, limite }) {
+    const lienzo = $('radar');
+    if (!lienzo || lienzo.hidden) return;
+    const ctx = lienzo.getContext('2d');
+    const w = lienzo.width;
+    const h = lienzo.height;
+    const escala = (w - 16) / (limite * 2);
+    const px = (x) => w / 2 - x * escala;
+    const pz = (z) => h / 2 - z * escala;
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(14, 30, 22, 0.78)';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(127, 176, 105, 0.8)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(8, 8, w - 16, h - 16);
+
+    ctx.fillStyle = '#6dffa8';
+    ctx.fillRect(px(porteria.x) - 9, pz(porteria.z) - 3, 18, 6);
+
+    for (const pl of placas) {
+        ctx.fillStyle = pl.activa ? '#2bff88' : '#4d7f95';
+        ctx.fillRect(px(pl.x) - 4, pz(pl.z) - 4, 8, 8);
+    }
+
+    ctx.fillStyle = '#5ff2ff';
+    for (const c of cristales) {
+        ctx.beginPath();
+        ctx.arc(px(c.x), pz(c.z), 3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    ctx.save();
+    ctx.translate(px(jugador.x), pz(jugador.z));
+    ctx.rotate(-jugador.mirada);
+    ctx.fillStyle = '#ffd37a';
+    ctx.beginPath();
+    ctx.moveTo(0, -8);
+    ctx.lineTo(5, 6);
+    ctx.lineTo(-5, 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
     }
 
     export function mostrarAviso(texto, ms = 2200) {
@@ -145,7 +208,9 @@
     $('res-estrellas').textContent = '★'.repeat(r.estrellas) + '☆'.repeat(3 - r.estrellas);
     $('res-puntos').textContent = String(r.puntos);
     const bono = r.bono > 0 ? ` Bono por tiempo: ${r.bono}.` : '';
-    $('res-detalle').textContent = `Cristales: ${r.recogidos} de ${r.total}. Goles: ${r.goles}. Tiempo usado: ${r.tiempoUsado} s.${bono}`;
+    const puzzle = r.puzzle ? ' Puzzle de placas resuelto.' : '';
+    $('res-detalle').textContent = `Cristales: ${r.recogidos} de ${r.total}. Goles: ${r.goles}. Tiempo usado: ${r.tiempoUsado} s.${bono}${puzzle}`;
+    $('res-record').textContent = r.esRecord ? '¡Nuevo récord!' : `Récord: ${r.record} puntos`;
     $('resultado').hidden = false;
     }
 
@@ -153,7 +218,7 @@
     $('resultado').hidden = true;
     }
 
-    /* Estado del personaje y carga (se conservan igual) */
+    /* Estado del personaje y carga */
     export function actualizarEstado({ animacion, movimiento, rotacion }) {
     if (animacion !== undefined) {
         $('estado-animacion').textContent = animacion;

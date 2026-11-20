@@ -28,6 +28,11 @@
     let vr = null;
     let camara = null;
 
+    // Los navegadores solo dejan sonar el audio después de un clic o una tecla
+    const despertarAudio = () => sonido.activar();
+    window.addEventListener('click', despertarAudio, { once: true });
+    window.addEventListener('keydown', despertarAudio, { once: true });
+
     const enPartida = () => juego && (juego.modo === 'cristales' || juego.modo === 'libre');
 
     function empezar(modo) {
@@ -61,6 +66,7 @@
         ui.mostrarMenu({ puedeContinuar: false });
         },
         alAbrirMenu: abrirMenu,
+        alMusica: () => sonido.alternarMusica(),
         alSonido: () => sonido.alternar()
     });
 
@@ -119,6 +125,12 @@
     });
 
     juego = new Juego({ scene, fisica, cuerpoPersonaje: cuerpo, sonido, ui, limite: CONFIG.limite });
+    juego.vincular(control);
+    control.acciones = {
+        agarrar: () => juego.agarrarOSoltar(),
+        patear: () => juego.patear(),
+        pulso: () => juego.pulsoDeLuz()
+    };
 
     vr = new GestorVR({
         renderer,
@@ -157,6 +169,7 @@
         control.bloqueado = !enPartida() || pantallaDelante;
 
         control.update(delta);
+        juego.preFisica();
         fisica.actualizar(delta);
         control.sincronizar(delta);
 

@@ -3,10 +3,13 @@
     import { crearPanelAyudaVR, crearPanelHUDVR } from './vrPanels.js';
 
     const DISTANCIA_ATRAS = 2.6; // metros que la vista queda detrás del personaje
-    const GIRO_VR = 45; // grados por cada giro con la palanca derecha
+    const GIRO_VR = 45; // grados por cada giro con el joystick derecho
     const ZONA_MUERTA = 0.2;
 
     const sinZonaMuerta = (v) => (Math.abs(v) < ZONA_MUERTA ? 0 : v);
+
+    // Índices de botones del perfil "xr-standard" de los mandos Quest
+    const BOTON = { GATILLO: 0, AGARRE: 1, JOYSTICK: 3, A_X: 4, B_Y: 5 };
 
     export class GestorVR {
     constructor({ renderer, scene, camera, alIniciar, alTerminar, alReiniciar }) {
@@ -28,7 +31,7 @@
         scene.add(this.rig);
 
         this.panelAyuda = crearPanelAyudaVR();
-        this.panelAyuda.malla.position.set(-1.3, 1.5, -1.5);
+        this.panelAyuda.malla.position.set(-1.35, 1.5, -1.3);
         this.panelAyuda.malla.rotation.y = 0.55;
         this.rig.add(this.panelAyuda.malla);
 
@@ -118,23 +121,50 @@
 
         const previo = this.previos[mano];
         const pulsado = (i) => !!botones[i] && botones[i].pressed && !previo[i];
+        const vibrar = (fuerza = 0.5, ms = 60) => {
+            try {
+            const actuador = mando.hapticActuators && mando.hapticActuators[0];
+            if (actuador && actuador.pulse) actuador.pulse(fuerza, ms);
+            } catch (error) {
+            // No todos los navegadores ofrecen vibración
+            }
+        };
 
+        // Los dos joysticks tienen una función cada uno
         if (mano === 'left') {
             lateral = sinZonaMuerta(ejeX);
             adelante = -sinZonaMuerta(ejeY);
-            if (pulsado(4)) personaje.alternarLocomocion();
-            if (pulsado(5)) this.panelAyuda.malla.visible = !this.panelAyuda.malla.visible;
-            if (pulsado(0)) this.alReiniciar();
-        } else {
-            if (Math.abs(ejeX) > 0.7 && this.giroListo) {
+        } else if (Math.abs(ejeX) > 0.7 && this.giroListo) {
             personaje.girar(ejeX > 0 ? GIRO_VR : -GIRO_VR);
             this.giroListo = false;
-            } else if (Math.abs(ejeX) < 0.3) {
+        } else if (mano === 'right' && Math.abs(ejeX) < 0.3) {
             this.giroListo = true;
+        }
+
+        if (juego.modo === 'fin') {
+            // Con la partida terminada, el gatillo o el botón A empiezan otra
+            if (pulsado(BOTON.GATILLO) || (mano === 'right' && pulsado(BOTON.A_X))) this.alReiniciar();
+        } else {
+            if (pulsado(BOTON.JOYSTICK)) personaje.alternarMarcha();
+            if (pulsado(BOTON.AGARRE)) {
+            personaje.agarrar();
+            vibrar(0.5, 60);
             }
-            if (pulsado(4)) personaje.saltar();
-            if (pulsado(5)) personaje.alternarBaile();
-            if (pulsado(0)) personaje.alternarMarcha();
+            if (mano === 'left') {
+            if (pulsado(BOTON.A_X)) personaje.alternarLocomocion(); // botón X
+            if (pulsado(BOTON.B_Y)) this.panelAyuda.malla.visible = !this.panelAyuda.malla.visible; // botón Y
+            if (pulsado(BOTON.GATILLO)) {
+                personaje.pulso();
+                vibrar(0.7, 120);
+            }
+            } else {
+            if (pulsado(BOTON.A_X)) personaje.saltar(); // botón A
+            if (pulsado(BOTON.B_Y)) personaje.alternarBaile(); // botón B
+            if (pulsado(BOTON.GATILLO)) {
+                personaje.patear();
+                vibrar(0.9, 80);
+            }
+            }
         }
 
         for (let i = 0; i < botones.length; i++) previo[i] = botones[i].pressed;

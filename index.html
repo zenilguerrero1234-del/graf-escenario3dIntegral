@@ -4,8 +4,8 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="theme-color" content="#1f3a2e" />
-        <title>El Claro Brumoso | Escenario 3D con Three.js</title>
-        <meta name="description" content="Escenario 3D interactivo hecho con Three.js y WebGL" />
+        <title>Brumaluz | Cazadores de Cristales</title>
+        <meta name="description" content="Brumaluz: Cazadores de Cristales. Juego 3D hecho con Three.js y WebGL, compatible con Meta Quest 3S." />
         <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
     </head>
     <body>
@@ -13,8 +13,8 @@
         <div id="app" class="lienzo"></div>
 
         <header class="encabezado">
-            <h2 class="encabezado__titulo">El Claro Brumoso</h2>
-            <p class="encabezado__sub">Exploración 3D con Three.js y WebGL</p>
+            <h2 class="encabezado__titulo">BRUMALUZ</h2>
+            <p class="encabezado__sub">Cazadores de Cristales</p>
         </header>
 
         <button class="boton-menu" id="boton-menu" type="button">☰ Menú (M)</button>
@@ -33,7 +33,10 @@
             <div class="hud-juego__item solo-cristales"><span>Cristales</span><strong id="hud-cristales">0/12</strong></div>
             <div class="hud-juego__item solo-cristales"><span>Puntos</span><strong id="hud-puntos">0</strong></div>
             <div class="hud-juego__item"><span>Goles</span><strong id="hud-goles">0</strong></div>
+            <div class="hud-juego__item"><span>Pulso (R)</span><strong id="hud-pulso">Listo</strong></div>
         </section>
+
+        <canvas class="radar" id="radar" width="160" height="160" aria-label="Radar del claro" hidden></canvas>
 
         <div class="aviso" id="aviso" hidden></div>
 
@@ -42,25 +45,46 @@
             <div class="menu__logo" aria-hidden="true">
                 <svg viewBox="0 0 64 64" width="72" height="72">
                 <rect width="64" height="64" rx="14" fill="#1f3a2e" />
-                <polygon points="32,8 46,28 38,28 50,44 14,44 26,28 18,28" fill="#7fb069" />
-                <rect x="29" y="44" width="6" height="10" fill="#8a5a3b" />
-                <circle cx="50" cy="14" r="5" fill="#c9d1cf" />
+                <polygon points="32,8 46,26 32,56 18,26" fill="#5ff2ff" />
+                <polygon points="32,8 46,26 32,26" fill="#c9f8ff" />
+                <polygon points="32,26 46,26 32,56" fill="#2fb4d6" />
+                <circle cx="52" cy="12" r="4" fill="#ffd37a" />
                 </svg>
             </div>
-            <h2 class="menu__titulo">El Claro Brumoso</h2>
-            <p class="menu__lema">Un bosque de niebla, doce cristales de luz y una pelota que espera su gol.</p>
+            <h2 class="menu__titulo">BRUMALUZ</h2>
+            <p class="menu__subtitulo">Cazadores de Cristales</p>
+            <p class="menu__lema">Entra al bosque de la niebla, atrapa los cristales de luz y descubre qué esconde el claro.</p>
+            <p class="menu__record">Récord: <strong id="menu-record">0</strong> puntos</p>
 
             <div class="menu__vista" id="vista-principal">
                 <button class="boton boton--principal" id="btn-continuar" type="button" hidden>Continuar</button>
-                <button class="boton boton--principal" id="btn-jugar" type="button">Jugar: cristales de luz</button>
+                <button class="boton boton--principal" id="btn-jugar" type="button">Jugar: cazar cristales</button>
                 <button class="boton" id="btn-libre" type="button">Modo libre: explorar</button>
                 <button class="boton boton--vr" id="btn-vr" type="button" disabled>Entrar en VR (Meta Quest 3S)</button>
                 <p class="menu__nota" id="nota-vr">Comprobando compatibilidad con VR…</p>
                 <div class="menu__fila">
+                <button class="boton boton--sec" id="btn-ayuda" type="button">Cómo jugar</button>
                 <button class="boton boton--sec" id="btn-controles" type="button">Controles</button>
                 <button class="boton boton--sec" id="btn-creditos" type="button">Créditos</button>
-                <button class="boton boton--sec" id="btn-sonido" type="button">Sonido: sí</button>
                 </div>
+                <div class="menu__fila">
+                <button class="boton boton--sec" id="btn-musica" type="button">Música: sí</button>
+                <button class="boton boton--sec" id="btn-sonido" type="button">Efectos: sí</button>
+                </div>
+            </div>
+
+            <div class="menu__vista" id="vista-ayuda" hidden>
+                <h3>Objetivo</h3>
+                <p>Recoge los 12 cristales de luz antes de que se acabe el tiempo. Si encadenas varios seguidos, ganas un combo de hasta x3.</p>
+                <h3>Pulso de luz</h3>
+                <p>Atrae los cristales cercanos hacia ti. Tarda 8 segundos en recargarse.</p>
+                <h3>Agarrar y lanzar</h3>
+                <p>Sujeta una caja, un barril o la pelota, llévalos a donde quieras y suéltalos, o lánzalos.</p>
+                <h3>Placas de luz</h3>
+                <p>Hay tres placas brillantes en el suelo. Si pones un objeto sobre cada una, ganas 400 puntos y 20 segundos extra.</p>
+                <h3>Portería</h3>
+                <p>Patea la pelota hacia la portería verde. Un guardián de piedra se mueve de lado a lado para detenerla. Cada gol vale 150 puntos.</p>
+                <button class="boton boton--sec" type="button" data-volver>Volver</button>
             </div>
 
             <div class="menu__vista" id="vista-controles" hidden>
@@ -83,9 +107,9 @@
                 <h3>Números de control</h3>
                 <p>24200101 | 25200365</p>
                 <h3>Materia y escena</h3>
-                <p>Graficación · El Claro Brumoso</p>
+                <p>Graficación · Brumaluz: Cazadores de Cristales</p>
                 <h3>Recursos</h3>
-                <p>Personaje y animaciones de Mixamo. Ambiente HDR de Poly Haven (CC0). Piso generado por código. Hecho con Three.js, cannon-es y Vite.</p>
+                <p>Personaje y animaciones de Mixamo. Ambiente HDR de Poly Haven (CC0). Piso y música generados por código. Hecho con Three.js, cannon-es y Vite.</p>
                 <button class="boton boton--sec" type="button" data-volver>Volver</button>
             </div>
             </div>
@@ -96,6 +120,7 @@
             <h2 id="res-titulo">Partida terminada</h2>
             <p class="resultado__estrellas" id="res-estrellas">☆☆☆</p>
             <p class="resultado__puntos"><strong id="res-puntos">0</strong> puntos</p>
+            <p id="res-record"></p>
             <p id="res-detalle"></p>
             <div class="menu__fila">
                 <button class="boton boton--principal" id="btn-reintentar" type="button">Jugar otra vez</button>
@@ -111,7 +136,7 @@
         </div>
 
         <footer class="pie" id="pie">
-            <h1 class="pie__titulo">El Claro Brumoso</h1>
+            <h1 class="pie__titulo">Brumaluz: Cazadores de Cristales</h1>
             <span>Integrantes: Juan Pablo Sánchez García | Eduardo Zenil Guerrero</span>
             <span>Números de control: 24200101 | 25200365</span>
         </footer>

@@ -1,6 +1,6 @@
-# El Claro Brumoso
+# Brumaluz: Cazadores de Cristales
 
-Escenario 3D interactivo hecho con Three.js, cannon-es y Vite. Se controla a un personaje humano modelado en 3D por un claro de bosque con niebla, y se puede jugar en el navegador o con unas gafas Meta Quest 3S.
+Juego 3D hecho con Three.js, cannon-es y Vite. Se controla a un personaje humano modelado en 3D por un claro de bosque con niebla, y se puede jugar en el navegador o con unas gafas Meta Quest 3S.
 
 Página publicada: https://zenilguerrero1234-del.github.io/graf-escenario3dIntegral/
 
@@ -11,37 +11,47 @@ Integrantes:
 
 ## Qué incluye
 
-- Menú principal con dos modos de juego, controles, créditos y opción de sonido.
-- Personaje humano en FBX (Mixamo) con animaciones de reposo, caminar, correr, bailar y saltar, con transiciones suaves entre ellas.
+- Menú principal con dos modos de juego, ayuda, controles, créditos, música y efectos.
+- Personaje humano en FBX (Mixamo) con animaciones de reposo, caminar, correr, bailar y saltar. Se voltea hacia la dirección en la que se mueve.
 - Escenario con piso texturizado, ambiente HDR de 360 grados, niebla gris clara, sombras, farolas y luciérnagas.
 - Más de cinco tipos de objetos: pinos, rocas, tronco caído, cajas, barriles, farolas y una pelota.
-- Físicas y colisiones con cannon-es. Las cajas, los barriles y la pelota se pueden empujar, y el personaje no atraviesa los obstáculos ni sale del claro.
+- Físicas y colisiones con cannon-es. El personaje no atraviesa los obstáculos ni sale del claro.
 - Cámara con OrbitControls que sigue al personaje sin quitarte el control del ratón.
+- Música de fondo generada por código y efectos de sonido.
 - Soporte para Meta Quest 3S mediante WebXR.
 
 ## Cómo se juega
 
 Hay dos modos:
 
-- Cristales de luz: tienes 150 segundos para recoger los 12 cristales que flotan por el claro. Cada cristal vale 100 puntos y cada gol 150. Si los recoges todos, ganas un bono por el tiempo que sobre. Al final se muestran los puntos y de una a tres estrellas.
-- Modo libre: sin tiempo ni cristales. Sirve para explorar, probar las animaciones y jugar con la pelota.
+- Cazar cristales: tienes 150 segundos para recoger los 12 cristales de luz que flotan por el claro. Cada cristal vale 100 puntos y, si encadenas varios con menos de 4 segundos entre uno y otro, el combo multiplica los puntos hasta por tres. Al final hay un bono por el tiempo que sobre y de una a tres estrellas. El récord se guarda en el navegador.
+- Modo libre: sin tiempo ni cristales, para explorar y probar todo.
 
-En los dos modos puedes meter la pelota en la portería, que está en el extremo opuesto al inicio.
+Mecánicas:
+
+- Pulso de luz: atrae los cristales cercanos. Se recarga en 8 segundos.
+- Agarrar: sujeta una caja, un barril o la pelota, y puedes soltarlos o lanzarlos.
+- Placas de luz: hay tres placas en el suelo. Si pones un objeto sobre cada una ganas 400 puntos y 20 segundos extra.
+- Portería: patea la pelota hacia la portería verde. Un guardián de piedra se mueve de lado a lado para detenerla. Cada gol vale 150 puntos.
+- Radar: en una esquina muestra los cristales, las placas y la portería.
 
 ## Controles de teclado
 
 | Tecla | Acción |
 |---|---|
-| W | Avanzar |
-| S | Retroceder |
-| A | Desplazarse a la izquierda |
-| D | Desplazarse a la derecha |
+| ↑ | Avanzar |
+| ↓ | Retroceder |
+| ← | Desplazarse a la izquierda |
+| → | Desplazarse a la derecha |
 | 1 | Animación de caminar |
 | 2 | Animación de correr |
 | 3 | Animación de bailar |
 | Espacio | Saltar |
 | E | Girar 90 grados |
 | P | Iniciar o detener el movimiento |
+| F | Agarrar o soltar un objeto |
+| Q | Patear o lanzar |
+| R | Pulso de luz |
 | M | Abrir el menú y pausar |
 
 La cámara se gira arrastrando con el botón izquierdo del ratón y se acerca o aleja con la rueda.
@@ -50,21 +60,26 @@ La cámara se gira arrastrando con el botón izquierdo del ratón y se acerca o 
 
 | Mando | Acción |
 |---|---|
-| Palanca izquierda | Mover al personaje |
-| Palanca derecha | Girar la vista en pasos de 45 grados |
-| Botón A | Saltar |
-| Botón B | Bailar o dejar de bailar |
-| Botón X | Cambiar entre caminar y correr |
-| Botón Y | Mostrar u ocultar el panel de ayuda |
-| Gatillo derecho | Iniciar o detener el movimiento |
-| Gatillo izquierdo | Reiniciar la partida |
+| Joystick izquierdo | Mover al personaje |
+| Joystick derecho | Girar la vista en pasos de 45 grados |
+| Presionar un joystick | Iniciar o detener el movimiento |
+| Botón A (mando derecho) | Saltar |
+| Botón B (mando derecho) | Bailar o dejar de bailar |
+| Botón X (mando izquierdo) | Cambiar entre caminar y correr |
+| Botón Y (mando izquierdo) | Mostrar u ocultar el panel de ayuda |
+| Gatillo derecho | Patear o lanzar |
+| Gatillo izquierdo | Pulso de luz |
+| Botón de agarre | Agarrar o soltar objetos |
+| Botón Meta | Abre el menú del visor (lo controla Meta) |
+
+Cuando termina una partida, el gatillo o el botón A empiezan otra.
 
 ## Usarlo con las gafas
 
 1. Abre la página publicada con el navegador de las Meta Quest. WebXR solo funciona con HTTPS, y GitHub Pages ya lo ofrece.
 2. En el menú, pulsa "Entrar en VR". Si el botón aparece desactivado, el mensaje que está debajo explica el motivo.
 3. Dentro de las gafas el juego empieza en modo cristales. La vista es en tercera persona, detrás del personaje, y el marcador y el panel de ayuda flotan frente a ti.
-4. Para salir, usa el botón de menú de Meta.
+4. Para salir, usa el botón Meta.
 
 La vista se mueve junto con el personaje, y a algunas personas eso les puede dar mareo. Si pasa, se pueden bajar las velocidades en `src/config.js` o aumentar `DISTANCIA_ATRAS` en `src/vr/vrManager.js`.
 
@@ -108,7 +123,7 @@ public/assets/
 └── hdr/forest.hdr
 ```
 
-El personaje y todas las animaciones se descargan de Mixamo con el mismo personaje seleccionado, para que compartan esqueleto. El HDR es el "Whipple Creek Regional Park 01" de Poly Haven. Las texturas del piso se generaron por código.
+El personaje y todas las animaciones se descargan de Mixamo con el mismo personaje seleccionado, para que compartan esqueleto. El HDR es el "Whipple Creek Regional Park 01" de Poly Haven. Las texturas del piso y la música se generaron por código.
 
 ## Estructura del proyecto
 
@@ -120,15 +135,15 @@ graf-escenario3dIntegral/
 │   ├── main.js
 │   ├── config.js
 │   ├── style.css
-│   ├── audio/        sonidos generados por código
+│   ├── audio/        música de fondo y efectos generados por código
 │   ├── camera/       cámara con OrbitControls
 │   ├── character/    carga, animaciones y controles del personaje
-│   ├── game/         cristales, portería, puntos y tiempo
+│   ├── game/         cristales, placas, portería, guardián, puntos y récord
 │   ├── input/        teclado
 │   ├── objects/      pinos, rocas, cajas, barriles, farolas y pelota
 │   ├── physics/      mundo físico y colisiones
 │   ├── scene/        escena, iluminación, ambiente, piso y luciérnagas
-│   ├── ui/           menú, marcador y avisos
+│   ├── ui/           menú, marcador, radar y avisos
 │   └── vr/           sesión WebXR, mandos y paneles dentro de las gafas
 ├── index.html
 ├── package.json
@@ -137,7 +152,7 @@ graf-escenario3dIntegral/
 
 ## Tecnologías
 
-HTML, CSS y JavaScript con módulos. Three.js para el render, la carga de modelos y WebXR. cannon-es para las físicas. Vite para el desarrollo y la compilación.
+HTML, CSS y JavaScript con módulos. Three.js para el render, la carga de modelos y WebXR. cannon-es para las físicas. Web Audio para la música y los efectos. Vite para el desarrollo y la compilación.
 
 ## Publicación
 
@@ -163,5 +178,5 @@ Después hay que esperar a que la pestaña Actions del repositorio muestre los d
 
 - Personaje y animaciones: Mixamo.
 - Ambiente HDR: Poly Haven, licencia CC0.
-- Piso: texturas generadas por código.
+- Piso y música: generados por código.
 - Librerías: Three.js, cannon-es y Vite.

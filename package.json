@@ -3,7 +3,7 @@
     "private": true,
     "version": "1.0.0",
     "type": "module",
-    "description": "El Claro Brumoso: escenario 3D interactivo con Three.js y WebGL",
+    "description": "Brumaluz: Cazadores de Cristales. Juego 3D con Three.js y WebGL",
     "scripts": {
         "dev": "vite",
         "build": "vite build",
