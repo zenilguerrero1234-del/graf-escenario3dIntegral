@@ -12,7 +12,7 @@
     ['F', 'Agarrar o soltar un objeto'],
     ['Q', 'Patear o lanzar'],
     ['R', 'Pulso de luz'],
-    ['M', 'Abrir el menú y pausar']
+    ['M', 'Pausar o reanudar el juego']
     ];
 
     export const CONTROLES_VR = [
@@ -90,9 +90,16 @@
         const silenciado = acciones.alSonido();
         $('btn-sonido').textContent = silenciado ? 'Efectos: no' : 'Efectos: sí';
     });
-    $('boton-menu').addEventListener('click', () => acciones.alAbrirMenu());
+
+    // Pausa
+    $('boton-menu').addEventListener('click', () => acciones.alPausar());
+    $('btn-reanudar').addEventListener('click', () => acciones.alReanudar());
+    $('btn-pausa-reiniciar').addEventListener('click', () => acciones.alReiniciar());
+    $('btn-salir').addEventListener('click', () => acciones.alSalir());
+
+    // Resultado
     $('btn-reintentar').addEventListener('click', () => acciones.alReiniciar());
-    $('btn-res-menu').addEventListener('click', () => acciones.alVolverMenu());
+    $('btn-res-menu').addEventListener('click', () => acciones.alSalir());
     }
 
     /* Menú */
@@ -111,12 +118,26 @@
     return !$('menu').classList.contains('menu--oculto');
     }
 
+    /* Pausa */
+    export function mostrarPausa() {
+    $('pausa').hidden = false;
+    }
+
+    export function ocultarPausa() {
+    $('pausa').hidden = true;
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    }
+
+    export function pausaAbierta() {
+    return !$('pausa').hidden;
+    }
+
     export function resultadoAbierto() {
     return !$('resultado').hidden;
     }
 
     export function pantallaAbierta() {
-    return menuAbierto() || resultadoAbierto();
+    return menuAbierto() || pausaAbierta() || resultadoAbierto();
     }
 
     export function setEstadoVR(disponible, mensaje) {
@@ -132,19 +153,21 @@
     export function mostrarHUD(visible) {
     $('hud-juego').hidden = !visible;
     $('radar').hidden = !visible;
+    $('boton-menu').hidden = !visible;
     }
 
-    export function actualizarHUD({ modo, tiempo, recogidos, total, puntos, goles, pulso }) {
+    export function actualizarHUD({ modo, tiempo, recogidos, total, puntos, goles, pulso, efectos }) {
     $('hud-juego').dataset.modo = modo === 'libre' ? 'libre' : 'cristales';
     poner('hud-tiempo', formatoTiempo(tiempo));
     poner('hud-cristales', `${recogidos}/${total}`);
     poner('hud-puntos', String(puntos));
     poner('hud-goles', String(goles));
     poner('hud-pulso', pulso);
+    poner('hud-efectos', efectos);
     }
 
     // Mapa visto desde arriba, con la misma orientación que la cámara de inicio
-    export function dibujarRadar({ jugador, cristales, placas, porteria, limite }) {
+    export function dibujarRadar({ jugador, cristales, placas, poder = null, porteria, limite }) {
     const lienzo = $('radar');
     if (!lienzo || lienzo.hidden) return;
     const ctx = lienzo.getContext('2d');
@@ -174,6 +197,16 @@
         ctx.beginPath();
         ctx.arc(px(c.x), pz(c.z), 3, 0, Math.PI * 2);
         ctx.fill();
+    }
+
+    if (poder) {
+        ctx.fillStyle = `#${poder.color.toString(16).padStart(6, '0')}`;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(px(poder.x), pz(poder.z), 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
     }
 
     ctx.save();

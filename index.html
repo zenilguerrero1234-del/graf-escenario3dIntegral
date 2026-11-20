@@ -17,7 +17,7 @@
             <p class="encabezado__sub">Cazadores de Cristales</p>
         </header>
 
-        <button class="boton-menu" id="boton-menu" type="button">☰ Menú (M)</button>
+        <button class="boton-menu" id="boton-menu" type="button" hidden>⏸ Pausa (M)</button>
 
         <section class="panel panel--estado" aria-live="polite">
             <h3>Estado del personaje</h3>
@@ -34,6 +34,7 @@
             <div class="hud-juego__item solo-cristales"><span>Puntos</span><strong id="hud-puntos">0</strong></div>
             <div class="hud-juego__item"><span>Goles</span><strong id="hud-goles">0</strong></div>
             <div class="hud-juego__item"><span>Pulso (R)</span><strong id="hud-pulso">Listo</strong></div>
+            <div class="hud-juego__item solo-cristales"><span>Poder</span><strong id="hud-efectos">Ninguno</strong></div>
         </section>
 
         <canvas class="radar" id="radar" width="160" height="160" aria-label="Radar del claro" hidden></canvas>
@@ -84,6 +85,8 @@
                 <p>Hay tres placas brillantes en el suelo. Si pones un objeto sobre cada una, ganas 400 puntos y 20 segundos extra.</p>
                 <h3>Portería</h3>
                 <p>Patea la pelota hacia la portería verde. Un guardián de piedra se mueve de lado a lado para detenerla. Cada gol vale 150 puntos.</p>
+                <h3>Poderes</h3>
+                <p>Cada pocos segundos aparece un orbe de color en el claro (búscalo en el radar). Naranja: Turbo, corres más rápido 8 segundos. Morado: puntos dobles durante 10 segundos. Verde: 10 segundos extra.</p>
                 <button class="boton boton--sec" type="button" data-volver>Volver</button>
             </div>
 
@@ -111,6 +114,18 @@
                 <h3>Recursos</h3>
                 <p>Personaje y animaciones de Mixamo. Ambiente HDR de Poly Haven (CC0). Piso y música generados por código. Hecho con Three.js, cannon-es y Vite.</p>
                 <button class="boton boton--sec" type="button" data-volver>Volver</button>
+            </div>
+            </div>
+        </section>
+        
+        <section class="pausa" id="pausa" aria-label="Juego en pausa" hidden>
+            <div class="pausa__tarjeta">
+            <h2>Juego en pausa</h2>
+            <p>El tiempo está detenido.</p>
+            <div class="pausa__botones">
+            <button class="boton boton--principal" id="btn-reanudar" type="button">▶ Reanudar</button>
+            <button class="boton" id="btn-pausa-reiniciar" type="button">↻ Reiniciar partida</button>
+            <button class="boton boton--sec" id="btn-salir" type="button">⏏ Salir al menú principal</button>
             </div>
             </div>
         </section>

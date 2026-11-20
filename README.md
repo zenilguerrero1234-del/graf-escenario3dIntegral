@@ -34,6 +34,8 @@ Mecánicas:
 - Placas de luz: hay tres placas en el suelo. Si pones un objeto sobre cada una ganas 400 puntos y 20 segundos extra.
 - Portería: patea la pelota hacia la portería verde. Un guardián de piedra se mueve de lado a lado para detenerla. Cada gol vale 150 puntos.
 - Radar: en una esquina muestra los cristales, las placas y la portería.
+- Poderes: cada pocos segundos aparece un orbe de color en el claro, visible en el radar. El naranja da Turbo (más velocidad durante 8 segundos), el morado da puntos dobles durante 10 segundos y el verde suma 10 segundos al reloj.
+- Pausa: el botón "Pausa" o la tecla M detienen el tiempo. Desde ahí se puede reanudar, reiniciar la partida o salir al menú principal.
 
 ## Controles de teclado
 
@@ -52,7 +54,7 @@ Mecánicas:
 | F | Agarrar o soltar un objeto |
 | Q | Patear o lanzar |
 | R | Pulso de luz |
-| M | Abrir el menú y pausar |
+| M | Pausar o reanudar el juego |
 
 La cámara se gira arrastrando con el botón izquierdo del ratón y se acerca o aleja con la rueda.
 

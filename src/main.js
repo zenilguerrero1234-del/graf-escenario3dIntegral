@@ -37,18 +37,47 @@
 
     function empezar(modo) {
         sonido.activar();
+        sonido.musica.atenuar(false);
         ui.ocultarMenu();
+        ui.ocultarPausa();
         ui.ocultarResultado();
         control.reiniciar();
         juego.iniciar(modo);
         ui.mostrarHUD(true);
     }
 
-    function abrirMenu() {
-        if (!juego || (vr && vr.activo) || ui.resultadoAbierto()) return;
-        if (ui.menuAbierto() && enPartida()) ui.ocultarMenu();
-        else ui.mostrarMenu({ puedeContinuar: enPartida() });
+    function mostrarPausa() {
+        ui.mostrarPausa();
+        sonido.musica.atenuar(true);
     }
+
+    function reanudar() {
+        ui.ocultarPausa();
+        sonido.musica.atenuar(false);
+    }
+
+    // Cierra la partida y vuelve al menú principal
+    function salirAlMenu() {
+        ui.ocultarPausa();
+        ui.ocultarResultado();
+        sonido.musica.atenuar(false);
+        juego.detener();
+        ui.mostrarHUD(false);
+        ui.mostrarMenu({ puedeContinuar: false });
+    }
+
+    // M y Escape: pausan y reanudan
+    function alternarPausa() {
+        if (!juego || (vr && vr.activo) || ui.resultadoAbierto()) return;
+        if (ui.menuAbierto()) {
+        if (enPartida()) ui.ocultarMenu();
+        return;
+        }
+        if (ui.pausaAbierta()) reanudar();
+        else if (enPartida()) mostrarPausa();
+    }
+
+    const reiniciarPartida = () => empezar(juego.modo === 'libre' ? 'libre' : 'cristales');
 
     ui.iniciarInterfaz({
         alJugar: () => empezar('cristales'),
@@ -58,14 +87,10 @@
         sonido.activar();
         if (vr) vr.iniciar();
         },
-        alReiniciar: () => empezar('cristales'),
-        alVolverMenu: () => {
-        ui.ocultarResultado();
-        juego.modo = 'menu';
-        ui.mostrarHUD(false);
-        ui.mostrarMenu({ puedeContinuar: false });
-        },
-        alAbrirMenu: abrirMenu,
+        alPausar: alternarPausa,
+        alReanudar: reanudar,
+        alReiniciar: reiniciarPartida,
+        alSalir: salirAlMenu,
         alMusica: () => sonido.alternarMusica(),
         alSonido: () => sonido.alternar()
     });
@@ -85,7 +110,7 @@
 
     camara = crearControlesCamara(camera, renderer.domElement);
     const teclado = new Teclado();
-    teclado.alPulsar(['KeyM', 'Escape'], abrirMenu);
+    teclado.alPulsar(['KeyM', 'Escape'], alternarPausa);
 
     let terminados = 0;
     const avanzar = (texto) => {
@@ -138,6 +163,7 @@
         camera,
         alIniciar: () => {
         ui.ocultarMenu();
+        ui.ocultarPausa();
         ui.ocultarResultado();
         if (!enPartida()) empezar('cristales');
         },
@@ -149,7 +175,7 @@
         camara.controls.update();
         ui.mostrarMenu({ puedeContinuar: enPartida() });
         },
-        alReiniciar: () => empezar('cristales')
+        alReiniciar: reiniciarPartida
     });
 
     const soporte = await GestorVR.comprobar();

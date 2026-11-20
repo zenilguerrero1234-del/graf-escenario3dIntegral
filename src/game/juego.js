@@ -16,6 +16,15 @@
     const POSICION_PELOTA = { x: 2, y: 0.36, z: 4 };
     const CLAVE_RECORD = 'brumaluz-record';
 
+    // Poderes que aparecen cada cierto tiempo
+    const VIDA_PODER = 15;
+    const MULTIPLICADOR_TURBO = 1.6;
+    const TIPOS_PODER = [
+    { id: 'turbo', color: 0xff8a3d, aviso: '¡Turbo! Corres más rápido durante 8 segundos' },
+    { id: 'doble', color: 0xc77dff, aviso: '¡Puntos dobles durante 10 segundos!' },
+    { id: 'tiempo', color: 0x6dffa8, aviso: '¡+10 segundos!' }
+    ];
+
     function crearAleatorio(semilla) {
     let a = semilla;
     return () => {
@@ -55,6 +64,9 @@
         this.tiempoPatada = 0;
         this.enfriamientoPulso = 0;
         this.pulsoActivo = 0;
+        this.poder = null;
+        this.proximoPoder = 10;
+        this.efectos = { turbo: 0, doble: 0 };
         this.record = this.leerRecord();
 
         // La pelota es el único cuerpo dinámico con forma de esfera
@@ -71,6 +83,7 @@
         this.crearPorteria();
         this.crearGuardian();
         this.crearAnillo();
+        this.crearDestello();
 
         this.ui.setRecord(this.record);
     }
@@ -221,6 +234,62 @@
         this.scene.add(this.anillo);
     }
 
+    // Chispas que salen al recoger cristales y poderes y al marcar goles
+    crearDestello() {
+        const n = 28;
+        const posiciones = new Float32Array(n * 3);
+        const geometria = new THREE.BufferGeometry();
+        const atributo = new THREE.BufferAttribute(posiciones, 3);
+        geometria.setAttribute('position', atributo);
+        const material = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.28,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+        });
+        const puntos = new THREE.Points(geometria, material);
+        puntos.frustumCulled = false;
+        puntos.visible = false;
+        this.scene.add(puntos);
+        this.destello = { n, pos: posiciones, vel: new Float32Array(n * 3), atributo, puntos, vida: 0 };
+    }
+
+    lanzarDestello(x, y, z, color) {
+        const d = this.destello;
+        for (let i = 0; i < d.n; i++) {
+        d.pos[i * 3] = x;
+        d.pos[i * 3 + 1] = y;
+        d.pos[i * 3 + 2] = z;
+        const a = Math.random() * Math.PI * 2;
+        const b = Math.random() * Math.PI - Math.PI / 2;
+        const v = 1.5 + Math.random() * 2.5;
+        d.vel[i * 3] = Math.cos(a) * Math.cos(b) * v;
+        d.vel[i * 3 + 1] = Math.sin(b) * v + 1.5;
+        d.vel[i * 3 + 2] = Math.sin(a) * Math.cos(b) * v;
+        }
+        d.vida = 0.7;
+        d.puntos.material.color.setHex(color);
+        d.puntos.material.opacity = 1;
+        d.puntos.visible = true;
+        d.atributo.needsUpdate = true;
+    }
+
+    actualizarDestello(delta) {
+        const d = this.destello;
+        if (d.vida <= 0) return;
+        d.vida -= delta;
+        for (let i = 0; i < d.n; i++) {
+        d.vel[i * 3 + 1] -= 6 * delta;
+        d.pos[i * 3] += d.vel[i * 3] * delta;
+        d.pos[i * 3 + 1] += d.vel[i * 3 + 1] * delta;
+        d.pos[i * 3 + 2] += d.vel[i * 3 + 2] * delta;
+        }
+        d.atributo.needsUpdate = true;
+        d.puntos.material.opacity = Math.max(0, d.vida / 0.7);
+        if (d.vida <= 0) d.puntos.visible = false;
+    }
+
     /* ---------- Récord ---------- */
 
     leerRecord() {
@@ -254,6 +323,11 @@
         this.enfriamientoPulso = 0;
         this.pulsoActivo = 0;
         this.anillo.visible = false;
+        this.quitarPoder();
+        this.proximoPoder = 10;
+        this.efectos.turbo = 0;
+        this.efectos.doble = 0;
+        if (this.control) this.control.multiplicadorVelocidad = 1;
 
         for (const c of this.cristales) {
         c.recogido = false;
@@ -277,6 +351,20 @@
         this.ui.actualizarHUD(this.datosHUD());
     }
 
+    // Sale de la partida y deja todo listo para volver al menú principal
+    detener() {
+        this.modo = 'menu';
+        this.reponerObjetos();
+        this.pulsoActivo = 0;
+        this.anillo.visible = false;
+        this.quitarPoder();
+        this.efectos.turbo = 0;
+        this.efectos.doble = 0;
+        if (this.control) this.control.multiplicadorVelocidad = 1;
+        for (const c of this.cristales) c.malla.visible = false;
+        this.sonido.musica.setTension(false);
+    }
+
     // Devuelve cajas, barriles y pelota a su sitio inicial
     reponerObjetos() {
         this.agarrado = null;
@@ -297,6 +385,10 @@
         cuerpo.velocity.set(0, 0, 0);
         cuerpo.angularVelocity.set(0, 0, 0);
         cuerpo.quaternion.set(0, 0, 0, 1);
+    }
+
+    multiplicadorPuntos() {
+        return this.efectos.doble > 0 ? 2 : 1;
     }
 
     /* ---------- Acciones del jugador ---------- */
@@ -441,6 +533,89 @@
         }
     }
 
+    /* ---------- Poderes ---------- */
+
+    generarPoder() {
+        const lugar = this.buscarLugar(Math.random, this.placas, 3);
+        if (!lugar) {
+        this.proximoPoder = 4;
+        return;
+        }
+        const tipo = TIPOS_PODER[Math.floor(Math.random() * TIPOS_PODER.length)];
+        const grupo = new THREE.Group();
+        const nucleo = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(0.34, 0),
+        new THREE.MeshStandardMaterial({ color: tipo.color, emissive: tipo.color, emissiveIntensity: 1.8, roughness: 0.3 })
+        );
+        const aro = new THREE.Mesh(
+        new THREE.TorusGeometry(0.55, 0.04, 8, 32),
+        new THREE.MeshBasicMaterial({ color: tipo.color })
+        );
+        aro.rotation.x = Math.PI / 2;
+        grupo.add(nucleo, aro);
+        grupo.position.set(lugar.x, 1.2, lugar.z);
+        this.scene.add(grupo);
+
+        this.poder = { tipo, grupo, nucleo, aro, x: lugar.x, z: lugar.z, vida: VIDA_PODER };
+        this.ui.mostrarAviso('Apareció un poder. Búscalo en el radar', 2200);
+    }
+
+    quitarPoder() {
+        if (!this.poder) return;
+        const { grupo, nucleo, aro } = this.poder;
+        this.scene.remove(grupo);
+        nucleo.geometry.dispose();
+        nucleo.material.dispose();
+        aro.geometry.dispose();
+        aro.material.dispose();
+        this.poder = null;
+    }
+
+    recogerPoder() {
+        const { tipo, x, z } = this.poder;
+        this.lanzarDestello(x, 1.2, z, tipo.color);
+        this.quitarPoder();
+        this.proximoPoder = 10 + Math.random() * 4;
+        this.sonido.poder();
+
+        if (tipo.id === 'turbo') this.efectos.turbo = 8;
+        else if (tipo.id === 'doble') this.efectos.doble = 10;
+        else if (tipo.id === 'tiempo') this.tiempo += 10;
+        this.ui.mostrarAviso(tipo.aviso, 2400);
+    }
+
+    actualizarPoderes(delta, t) {
+        this.efectos.turbo = Math.max(0, this.efectos.turbo - delta);
+        this.efectos.doble = Math.max(0, this.efectos.doble - delta);
+        if (this.control) {
+        this.control.multiplicadorVelocidad = this.efectos.turbo > 0 ? MULTIPLICADOR_TURBO : 1;
+        }
+        if (this.modo !== 'cristales') return;
+
+        if (!this.poder) {
+        this.proximoPoder -= delta;
+        if (this.proximoPoder <= 0) this.generarPoder();
+        return;
+        }
+
+        const pw = this.poder;
+        pw.vida -= delta;
+        pw.grupo.rotation.y = t * 2;
+        pw.grupo.position.y = 1.2 + Math.sin(t * 3) * 0.15;
+        pw.aro.rotation.z = t * 3;
+        pw.grupo.visible = pw.vida > 4 || Math.floor(t * 6) % 2 === 0; // parpadea antes de desaparecer
+
+        const p = this.cuerpoPersonaje.position;
+        if (Math.hypot(p.x - pw.x, p.z - pw.z) < 1.4) {
+        this.recogerPoder();
+        } else if (pw.vida <= 0) {
+        this.quitarPoder();
+        this.proximoPoder = 10 + Math.random() * 4;
+        }
+    }
+
+    /* ---------- Reglas ---------- */
+
     revisarCristales(t) {
         const p = this.cuerpoPersonaje.position;
         for (const c of this.cristales) {
@@ -450,11 +625,12 @@
             c.recogido = true;
             c.malla.visible = false;
             this.recogidos++;
+            this.lanzarDestello(m.x, m.y, m.z, 0x7fe7ff);
 
             this.racha = t - this.ultimoCristal < VENTANA_COMBO ? this.racha + 1 : 1;
             this.ultimoCristal = t;
             const multiplicador = Math.min(this.racha, 3);
-            this.puntos += PUNTOS_CRISTAL * multiplicador;
+            this.puntos += PUNTOS_CRISTAL * multiplicador * this.multiplicadorPuntos();
 
             this.sonido.cristal(multiplicador);
             this.ui.mostrarAviso(
@@ -473,7 +649,8 @@
         const dentro = Math.abs(p.x) < 2.0 && p.y < 2.4 && p.z < this.zPorteria + 0.8 && p.z > this.zPorteria - 1.6;
         if (!dentro) return;
         this.goles++;
-        this.puntos += PUNTOS_GOL;
+        this.puntos += PUNTOS_GOL * this.multiplicadorPuntos();
+        this.lanzarDestello(p.x, 1, p.z, 0x6dffa8);
         this.sonido.gol();
         this.ui.mostrarAviso('¡Gol!', 1800);
         this.reponerPelota();
@@ -502,13 +679,14 @@
 
         if (!this.puzzleResuelto && activas === this.placas.length) {
         this.puzzleResuelto = true;
-        this.puntos += PUNTOS_PUZZLE;
+        const puntos = PUNTOS_PUZZLE * this.multiplicadorPuntos();
+        this.puntos += puntos;
         if (this.modo === 'cristales') this.tiempo += SEGUNDOS_PUZZLE;
         this.sonido.puzzle();
         this.ui.mostrarAviso(
             this.modo === 'cristales'
-            ? `¡Puzzle resuelto! +${PUNTOS_PUZZLE} puntos y +${SEGUNDOS_PUZZLE} segundos`
-            : `¡Puzzle resuelto! +${PUNTOS_PUZZLE} puntos`,
+            ? `¡Puzzle resuelto! +${puntos} puntos y +${SEGUNDOS_PUZZLE} segundos`
+            : `¡Puzzle resuelto! +${puntos} puntos`,
             3000
         );
         }
@@ -516,8 +694,10 @@
 
     actualizar(delta, t) {
         this.animar(t);
+        this.actualizarDestello(delta);
         if (this.tiempoPatada > 0) this.tiempoPatada -= delta;
         this.actualizarPulso(delta);
+        this.actualizarPoderes(delta, t);
         this.revisarGol();
         this.revisarPlacas();
 
@@ -536,6 +716,11 @@
     terminar(completado) {
         this.modo = 'fin';
         this.sonido.musica.setTension(false);
+        this.quitarPoder();
+        this.efectos.turbo = 0;
+        this.efectos.doble = 0;
+        if (this.control) this.control.multiplicadorVelocidad = 1;
+
         const bono = completado ? Math.ceil(this.tiempo) * BONO_POR_SEGUNDO : 0;
         this.puntos += bono;
         const estrellas = this.puntos >= 2200 ? 3 : this.puntos >= 1400 ? 2 : this.puntos >= 600 ? 1 : 0;
@@ -565,6 +750,9 @@
     }
 
     datosHUD() {
+        const efectos = [];
+        if (this.efectos.turbo > 0) efectos.push(`Turbo ${Math.ceil(this.efectos.turbo)}s`);
+        if (this.efectos.doble > 0) efectos.push(`x2 ${Math.ceil(this.efectos.doble)}s`);
         return {
         modo: this.modo,
         tiempo: this.tiempo,
@@ -572,7 +760,8 @@
         total: this.total,
         puntos: this.puntos,
         goles: this.goles,
-        pulso: this.enfriamientoPulso > 0 ? `${Math.ceil(this.enfriamientoPulso)} s` : 'Listo'
+        pulso: this.enfriamientoPulso > 0 ? `${Math.ceil(this.enfriamientoPulso)} s` : 'Listo',
+        efectos: efectos.length > 0 ? efectos.join(' + ') : 'Ninguno'
         };
     }
 
@@ -585,6 +774,7 @@
             ? this.cristales.filter((c) => !c.recogido).map((c) => ({ x: c.malla.position.x, z: c.malla.position.z }))
             : [],
         placas: this.placas.map((pl) => ({ x: pl.x, z: pl.z, activa: pl.activa })),
+        poder: this.poder ? { x: this.poder.x, z: this.poder.z, color: this.poder.tipo.color } : null,
         porteria: { x: 0, z: this.zPorteria },
         limite: this.limite
         };

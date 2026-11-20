@@ -47,15 +47,24 @@
         this.proximo = ctx.currentTime + 0.15;
         this.paso = 0;
         this.temporizador = setInterval(() => this.programar(), 100);
-        this.viento();
     }
 
-    silenciar(valor) {
+        silenciar(valor) {
         this.silenciada = valor;
+        this.aplicarVolumen();
+    }
+
+    // Baja el volumen mientras el juego está en pausa
+    atenuar(valor) {
+        this.atenuada = valor;
+        this.aplicarVolumen();
+    }
+
+    aplicarVolumen() {
         const ctx = this.sonido.ctx;
-        if (this.maestro && ctx) {
-        this.maestro.gain.setTargetAtTime(valor ? 0 : 0.55, ctx.currentTime, 0.1);
-        }
+        if (!this.maestro || !ctx) return;
+        const objetivo = this.silenciada ? 0 : this.atenuada ? 0.18 : 0.55;
+        this.maestro.gain.setTargetAtTime(objetivo, ctx.currentTime, 0.1);
     }
 
     setTension(valor) {
@@ -233,6 +242,10 @@
 
     puzzle() {
         [523, 659, 784, 988, 1175, 1568].forEach((f, i) => this.nota(f, 0.25, 'triangle', 0.1, i * 0.08));
+    }
+
+    poder() {
+    [440, 660, 880, 1320].forEach((f, i) => this.nota(f, 0.18, 'sawtooth', 0.06, i * 0.05));
     }
 
     fin(completado) {

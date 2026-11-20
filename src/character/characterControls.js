@@ -32,6 +32,8 @@
 
         // Cuando es true (menú abierto, partida terminada) se ignoran las órdenes
         this.bloqueado = false;
+        // Lo cambia el poder Turbo
+        this.multiplicadorVelocidad = 1;
         // Movimiento que llega desde otros mandos (las gafas VR)
         this.entradaExtra = { adelante: 0, lateral: 0 };
         // Acciones de juego, las conecta main.js
@@ -150,7 +152,7 @@
         const pasoModelo = VELOCIDAD_GIRO_MODELO * delta;
         this.mirada += Math.abs(dif) <= pasoModelo ? dif : Math.sign(dif) * pasoModelo;
 
-        const velocidad = this.locomocion === 'run' ? CONFIG.velocidadCorrer : CONFIG.velocidadCaminar;
+        const velocidad = (this.locomocion === 'run' ? CONFIG.velocidadCorrer : CONFIG.velocidadCaminar) * this.multiplicadorVelocidad;
         this.cuerpo.velocity.x = this.direccion.x * velocidad;
         this.cuerpo.velocity.z = this.direccion.z * velocidad;
 
