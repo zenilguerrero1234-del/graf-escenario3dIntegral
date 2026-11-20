@@ -1,13 +1,15 @@
     import * as THREE from 'three';
 
-    export function crearIluminacion(scene, limite) {
-    const hemisferica = new THREE.HemisphereLight(0xdfe8e4, 0x3b4a3a, 0.9);
+    export function crearIluminacion(scene, limite, opciones = {}) {
+    const { sombras = 2048 } = opciones;
+
+    const hemisferica = new THREE.HemisphereLight(0xe8f0ec, 0x4a5c48, 1.3);
     scene.add(hemisferica);
 
-    const sol = new THREE.DirectionalLight(0xfff1d6, 2.0);
+    const sol = new THREE.DirectionalLight(0xfff1d6, 2.2);
     sol.position.set(-18, 28, 12);
     sol.castShadow = true;
-    sol.shadow.mapSize.set(2048, 2048);
+    sol.shadow.mapSize.set(sombras, sombras);
     const area = limite + 4;
     sol.shadow.camera.left = -area;
     sol.shadow.camera.right = area;
@@ -19,5 +21,10 @@
     sol.shadow.normalBias = 0.03;
     scene.add(sol);
 
-    return { hemisferica, sol };
+    // Luz de relleno desde el lado contrario al sol, sin sombras, para aclarar las partes oscuras
+    const relleno = new THREE.DirectionalLight(0xdde8ff, 0.9);
+    relleno.position.set(14, 10, -16);
+    scene.add(relleno);
+
+    return { hemisferica, sol, relleno };
     }

@@ -6,13 +6,14 @@
     const NOMBRES = { idle: 'Reposo', walk: 'Caminar', run: 'Correr', dance: 'Bailar', jump: 'Saltar' };
 
     export class ControlPersonaje {
-    constructor({ modelo, animaciones, cuerpo, mundo, teclado, ajusteY }) {
+    constructor({ modelo, animaciones, cuerpo, mundo, teclado, ajusteY, luz }) {
         this.modelo = modelo;
         this.animaciones = animaciones;
         this.cuerpo = cuerpo;
         this.mundo = mundo;
         this.teclado = teclado;
         this.ajusteY = ajusteY;
+        this.luz = luz || null;
 
         this.locomocion = 'walk';
         this.bailando = false;
@@ -26,39 +27,84 @@
         this.direccion = new THREE.Vector3();
         this.ultimoEstado = '';
 
+        // Cuando es true (menú abierto, partida terminada) se ignoran las órdenes
+        this.bloqueado = false;
+        // Movimiento que llega desde otros mandos (las gafas VR)
+        this.entradaExtra = { adelante: 0, lateral: 0 };
+
         teclado.alPulsar(['Digit1', 'Numpad1'], () => this.elegirLocomocion('walk'));
         teclado.alPulsar(['Digit2', 'Numpad2'], () => this.elegirLocomocion('run'));
-        teclado.alPulsar(['Digit3', 'Numpad3'], () => { this.bailando = !this.bailando; });
+        teclado.alPulsar(['Digit3', 'Numpad3'], () => this.alternarBaile());
         teclado.alPulsar(['Space'], () => this.saltar());
-        teclado.alPulsar(['KeyE'], () => { this.grados += 90; });
-        teclado.alPulsar(['KeyP'], () => { this.enMarcha = !this.enMarcha; });
+        teclado.alPulsar(['KeyE'], () => this.girar(90));
+        teclado.alPulsar(['KeyP'], () => this.alternarMarcha());
 
         this.sincronizar(0);
     }
 
     elegirLocomocion(nombre) {
+        if (this.bloqueado) return;
         this.locomocion = nombre;
         this.bailando = false;
         this.vistaPrevia = 1.5;
     }
 
+    alternarLocomocion() {
+        this.elegirLocomocion(this.locomocion === 'walk' ? 'run' : 'walk');
+    }
+
+    alternarBaile() {
+        if (this.bloqueado) return;
+        this.bailando = !this.bailando;
+    }
+
+    alternarMarcha() {
+        if (this.bloqueado) return;
+        this.enMarcha = !this.enMarcha;
+    }
+
+    girar(grados) {
+        if (this.bloqueado) return;
+        this.grados += grados;
+    }
+
     saltar() {
-        if (this.saltando || !this.enSuelo) return;
+        if (this.bloqueado || this.saltando || !this.enSuelo) return;
         this.saltando = true;
         this.tiempoSalto = 0;
         this.cuerpo.velocity.y = CONFIG.fuerzaSalto;
         this.animaciones.reproducir('jump', 0.1);
     }
 
+    // Devuelve al personaje al punto de inicio (al empezar una partida)
+    reiniciar() {
+        this.cuerpo.position.set(CONFIG.inicio.x, CONFIG.alturaPersonaje / 2 + 0.02, CONFIG.inicio.z);
+        this.cuerpo.velocity.set(0, 0, 0);
+        this.grados = 0;
+        this.yaw = 0;
+        this.bailando = false;
+        this.enMarcha = true;
+        this.saltando = false;
+        this.locomocion = 'walk';
+        this.vistaPrevia = 0;
+    }
+
     // Se llama antes de avanzar la física: decide velocidades y animación
     update(delta) {
         const t = this.teclado;
-        const adelante = (t.estaPresionada('KeyW') ? 1 : 0) - (t.estaPresionada('KeyS') ? 1 : 0);
-        const lateral = (t.estaPresionada('KeyD') ? 1 : 0) - (t.estaPresionada('KeyA') ? 1 : 0);
+        let adelante = (t.estaPresionada('KeyW') ? 1 : 0) - (t.estaPresionada('KeyS') ? 1 : 0) + this.entradaExtra.adelante;
+        let lateral = (t.estaPresionada('KeyD') ? 1 : 0) - (t.estaPresionada('KeyA') ? 1 : 0) + this.entradaExtra.lateral;
+        adelante = THREE.MathUtils.clamp(adelante, -1, 1);
+        lateral = THREE.MathUtils.clamp(lateral, -1, 1);
+        if (this.bloqueado) {
+        adelante = 0;
+        lateral = 0;
+        }
+
         const quiereMover = this.enMarcha && (adelante !== 0 || lateral !== 0);
         if (quiereMover && this.bailando) this.bailando = false;
 
-        // Giro en pasos exactos de 90 grados
+        // Giro en pasos exactos
         const objetivo = THREE.MathUtils.degToRad(this.grados);
         const diferencia = objetivo - this.yaw;
         const paso = CONFIG.velocidadGiro * delta;
@@ -105,6 +151,9 @@
         const c = this.cuerpo.position;
         this.modelo.position.set(c.x, c.y - CONFIG.alturaPersonaje / 2 + this.ajusteY, c.z);
         this.modelo.rotation.y = this.yaw;
+        if (this.luz) {
+        this.luz.position.set(c.x - Math.sin(this.yaw) * 1.2, c.y + 2.2, c.z - Math.cos(this.yaw) * 1.2);
+        }
         this.animaciones.actualizar(delta);
         this.mostrarEstado();
     }
