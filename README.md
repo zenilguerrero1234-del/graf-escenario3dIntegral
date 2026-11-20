@@ -1,6 +1,6 @@
 # El Claro Brumoso
 
-Escenario 3D interactivo hecho con Three.js, cannon-es y Vite. Es el proyecto final de la materia de Graficación. Se controla a un personaje humano modelado en 3D por un claro de bosque con niebla, y se puede jugar en el navegador o con unas gafas Meta Quest 3S.
+Escenario 3D interactivo hecho con Three.js, cannon-es y Vite. Se controla a un personaje humano modelado en 3D por un claro de bosque con niebla, y se puede jugar en el navegador o con unas gafas Meta Quest 3S.
 
 Página publicada: https://zenilguerrero1234-del.github.io/graf-escenario3dIntegral/
 
